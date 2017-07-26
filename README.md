@@ -1,0 +1,3 @@
+# AutoTakingNotes
+インターン用リポジトリ
+MOVERIOによる自動ノート作成アプリ
