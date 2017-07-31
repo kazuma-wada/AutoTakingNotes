@@ -3,4 +3,7 @@
     <string name="title_home">Home</string>stirng>
     <string name="title_dashboad">Dashboard</string>
     <string name="title_notifications">Notification</string>
+
+    <string name="primaryKey">0b2509006d6b476c906486ef385565f7</string>
+
 </resources>
