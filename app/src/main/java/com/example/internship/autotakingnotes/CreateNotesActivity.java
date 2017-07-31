@@ -39,6 +39,12 @@ public class CreateNotesActivity extends AppCompatActivity implements ISpeechRec
         gestureDetector = new GestureDetector(this, onGestureListener);
     }
 
+    @Override
+    protected void onStart() {
+        super.onStart();
+        startMediaRecord();
+    }
+
     public void endCreate(View viwe) {
         AlertDialog.Builder alert = new AlertDialog.Builder(this);
         alert.setTitle("ノート作成を");
@@ -77,7 +83,6 @@ public class CreateNotesActivity extends AppCompatActivity implements ISpeechRec
             }
             mediaFile = null;
             recorder = new MediaRecorder();
-            // 音声録音
             recorder.setAudioSource(MediaRecorder.AudioSource.MIC);
             recorder.setOutputFormat(MediaRecorder.OutputFormat.DEFAULT);
             recorder.setAudioEncoder(MediaRecorder.AudioEncoder.DEFAULT);
@@ -125,8 +130,9 @@ public class CreateNotesActivity extends AppCompatActivity implements ISpeechRec
          */
         @Override
         public boolean onDoubleTap(MotionEvent e) {
+            Log.d(TAG, "onDoubleTap: ");
             stopMediaRecord();
-            recordedFileNum++;
+            startMediaRecord();
             return super.onDoubleTap(e);
         }
 
