@@ -1,3 +1,6 @@
 <resources>
     <string name="app_name">AutoTakingNotes</string>
+    <string name="title_home">Home</string>stirng>
+    <string name="title_dashboad">Dashboard</string>
+    <string name="title_notifications">Notification</string>
 </resources>
