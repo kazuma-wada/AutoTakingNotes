@@ -8,4 +8,20 @@
     android:layout_height="match_parent"
     tools:context="com.example.internship.autotakingnotes.CreateNotesActivity">
 
+    <Button
+        android:id="@+id/button_end"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:onClick="endCreate"
+        android:text="終了"
+        tools:layout_editor_absoluteX="485dp"
+        tools:layout_editor_absoluteY="253dp" />
+
+    <TextView
+        android:id="@+id/textView"
+        android:layout_width="435dp"
+        android:layout_height="23dp"
+        android:text="TextView"
+        tools:layout_editor_absoluteX="16dp"
+        tools:layout_editor_absoluteY="269dp" />
 </android.support.constraint.ConstraintLayout>

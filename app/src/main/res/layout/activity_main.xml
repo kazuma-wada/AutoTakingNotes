@@ -6,7 +6,19 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:orientation="vertical"
     tools:context="com.example.internship.autotakingnotes.MainActivity">
+
+
+    <ImageView
+        android:id="@+id/imageView"
+        android:layout_width="match_parent"
+        android:layout_height="450dp"
+        android:scaleType="fitCenter"
+        android:src="@drawable/note" />
+
+
+
 
     <android.support.design.widget.BottomNavigationView
         android:id="@+id/navigation"
@@ -14,7 +26,9 @@
         android:layout_height="wrap_content"
         android:layout_gravity="bottom"
         android:background="?android:attr/windowBackground"
-        app:menu="@menu/navigation" />
+        app:menu="@menu/navigation"
+        />
 
 
-</LinearLayout >
+
+</LinearLayout>
