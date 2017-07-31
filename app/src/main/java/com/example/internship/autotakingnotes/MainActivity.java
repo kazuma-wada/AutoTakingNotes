@@ -13,7 +13,7 @@ import android.support.design.widget.BottomNavigationView;
 
 import com.microsoft.cognitiveservices.speechrecognition.RecognitionResult;
 
-public class MainActivity extends AppCompatActivity implements  View.OnClickListener {
+public class MainActivity extends AppCompatActivity {
 
 
     public static final String TAG = "mainActivity";
@@ -31,8 +31,6 @@ public class MainActivity extends AppCompatActivity implements  View.OnClickList
                     return true;
                 case R.id.navigation_dashboard:
                     Log.d(TAG, "呼ばれました:2");
-
-                    //
                     //Intent intent = new Intent(MainActivity.this,CreateActivity.class);
                     //startActivity(intent);
                     return true;
@@ -47,8 +45,6 @@ public class MainActivity extends AppCompatActivity implements  View.OnClickList
 
     };
 
-
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -56,16 +52,5 @@ public class MainActivity extends AppCompatActivity implements  View.OnClickList
 
         BottomNavigationView navigation = (BottomNavigationView)findViewById(R.id.navigation);
         navigation.setOnNavigationItemSelectedListener(mOnNavigationItemSelectedListener);
-        Button button = (Button) findViewById(R.id.button);
-        button.setOnClickListener(this);
     }
-
-    @Override
-    public void onClick(View view) {
-
-    }
-
-
-
-
 }

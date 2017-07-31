@@ -8,14 +8,6 @@
     android:layout_height="match_parent"
     tools:context="com.example.internship.autotakingnotes.MainActivity">
 
-    <Button
-        android:id="@+id/button"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Button"
-        tools:layout_editor_absoluteX="10dp"
-        tools:layout_editor_absoluteY="10dp" />
-
     <android.support.design.widget.BottomNavigationView
         android:id="@+id/navigation"
         android:layout_width="match_parent"
