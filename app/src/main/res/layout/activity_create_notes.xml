@@ -10,19 +10,25 @@
 
     <Button
         android:id="@+id/button_end"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="53dp"
+        android:layout_height="45dp"
+        android:gravity="bottom"
         android:onClick="endCreate"
         android:text="終了"
-        tools:layout_editor_absoluteX="485dp"
-        tools:layout_editor_absoluteY="253dp" />
+        tools:layout_editor_absoluteY="238dp"
+        tools:layout_editor_absoluteX="523dp" />
+
 
     <TextView
         android:id="@+id/textView"
-        android:layout_width="435dp"
-        android:layout_height="23dp"
+        android:layout_width="420dp"
+        android:layout_height="20dp"
+        android:gravity="bottom"
         android:text="TextView"
-        tools:layout_editor_absoluteX="16dp"
-        tools:layout_editor_absoluteY="269dp" />
+        tools:layout_editor_absoluteY="251dp"
+        android:layout_marginLeft="16dp"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toLeftOf="@+id/button_end"
+        android:layout_marginRight="8dp" />
 
 </android.support.constraint.ConstraintLayout>
