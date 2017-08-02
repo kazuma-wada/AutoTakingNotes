@@ -49,11 +49,11 @@ public class CreateNotesActivity extends AppCompatActivity implements ISpeechRec
     }
 
     private String getDefaultLocale() {
-        return "en-us";
+        return "ja-jp";
     }
 
     private SpeechRecognitionMode getMode() {
-        return SpeechRecognitionMode.ShortPhrase;
+        return SpeechRecognitionMode.LongDictation;
     }
 
     private String getSaveAudioDirPath() {
@@ -155,6 +155,9 @@ public class CreateNotesActivity extends AppCompatActivity implements ISpeechRec
     protected void onStop() {
         super.onStop();
 //        recorder.release();
+        if (this.micClient != null) {
+            this.micClient.endMicAndRecognition();
+        }
     }
 
     @Override
@@ -192,27 +195,27 @@ public class CreateNotesActivity extends AppCompatActivity implements ISpeechRec
 
     private void executeSpeechToText() {
         Log.d(TAG, "executeSpeechToText: ");
-//        if (this.micClient == null) {
-//            this.micClient = SpeechRecognitionServiceFactory.createMicrophoneClient(
-//                    this,
-//                    this.getMode(),
-//                    this.getDefaultLocale(),
-//                    this,
-//                    this.getPrimaryKey()
-//            );
-//            this.micClient.setAuthenticationUri(this.getAuthenticationUri());
-//        }
-//        this.micClient.startMicAndRecognition();
-        if (null == this.audioDataClient) {
-            this.audioDataClient = SpeechRecognitionServiceFactory.createDataClient(
+        if (this.micClient == null) {
+            this.micClient = SpeechRecognitionServiceFactory.createMicrophoneClient(
                     this,
                     this.getMode(),
                     this.getDefaultLocale(),
-                    this, this.getPrimaryKey()
+                    this,
+                    this.getPrimaryKey()
             );
-            this.audioDataClient.setAuthenticationUri(this.getAuthenticationUri());
+            this.micClient.setAuthenticationUri(this.getAuthenticationUri());
         }
-        this.SendAudioHelper(this.getFilePath());
+        this.micClient.startMicAndRecognition();
+//        if (null == this.audioDataClient) {
+//            this.audioDataClient = SpeechRecognitionServiceFactory.createDataClient(
+//                    this,
+//                    this.getMode(),
+//                    this.getDefaultLocale(),
+//                    this, this.getPrimaryKey()
+//            );
+//            this.audioDataClient.setAuthenticationUri(this.getAuthenticationUri());
+//        }
+//        this.SendAudioHelper(this.getFilePath());
     }
 
     private void SendAudioHelper(String filename) {
