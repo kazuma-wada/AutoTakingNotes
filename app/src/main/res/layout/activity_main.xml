@@ -10,12 +10,6 @@
     tools:context="com.example.internship.autotakingnotes.MainActivity">
 
 
-    <ImageView
-        android:id="@+id/imageView"
-        android:layout_width="match_parent"
-        android:layout_height="450dp"
-        android:scaleType="fitCenter"
-        android:src="@drawable/note" />
 
 
 
