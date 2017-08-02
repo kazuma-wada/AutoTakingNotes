@@ -8,6 +8,7 @@ import android.hardware.Camera;
 import android.media.MediaRecorder;
 import android.os.Environment;
 
+import android.os.AsyncTask;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -21,30 +22,66 @@ import android.view.View;
 
 import android.widget.Toast;
 
-
+import com.microsoft.bing.speech.SpeechClientStatus;
+import com.microsoft.cognitiveservices.speechrecognition.DataRecognitionClient;
 import com.microsoft.cognitiveservices.speechrecognition.ISpeechRecognitionServerEvents;
+import com.microsoft.cognitiveservices.speechrecognition.MicrophoneRecognitionClient;
 import com.microsoft.cognitiveservices.speechrecognition.RecognitionResult;
 import java.io.File;
 import java.io.FileOutputStream;
+import com.microsoft.cognitiveservices.speechrecognition.RecognitionStatus;
+import com.microsoft.cognitiveservices.speechrecognition.SpeechRecognitionMode;
+import com.microsoft.cognitiveservices.speechrecognition.SpeechRecognitionServiceFactory;
 
+import java.io.InputStream;
+import java.util.concurrent.TimeUnit;
 
 public class CreateNotesActivity extends AppCompatActivity implements ISpeechRecognitionServerEvents {
 
-    private static final String TAG = "CreateNotesActivity:";
+    private static final String TAG = "CreateNotesActivity";
 
     private GestureDetector gestureDetector;
-    private MediaRecorder recorder;
 
-    private static final String saveAudioDirPath = "/storage/emulated/0/media/Audio/AutoTakingNotes/";
-
-    private static final String filename = "AudioNotes.wav";
-
-    private int recordedFileNum = 0;
-
+    // 画像テキスト化用
     SurfaceView surfaceView;
     SurfaceHolder surfaceHolder;
     Camera camera;
 
+    // 音声テキスト化用
+    private int waitSeconds = 60;
+
+    private MicrophoneRecognitionClient micClient = null;
+    private FinalResponseStatus isReceivedResponse = FinalResponseStatus.NotReceived;
+
+    private enum FinalResponseStatus { NotReceived, OK, Timeout }
+
+    public String getPrimaryKey() {
+        return this.getString(R.string.primaryKey);
+    }
+
+    private String getDefaultLocale() {
+        return "ja-jp";
+    }
+
+    private SpeechRecognitionMode getMode() {
+        return SpeechRecognitionMode.LongDictation;
+    }
+
+    private String getSaveAudioDirPath() {
+        return "/storage/emulated/0/AutoTakingNotes/";
+    }
+
+    private String getWaveFile() {
+        return "AudioNotes.wav";
+    }
+
+    private String getFilePath() {
+        return getSaveAudioDirPath() + getWaveFile();
+    }
+
+    private String getAuthenticationUri() {
+        return this.getString(R.string.authenticationUri);
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -61,10 +98,18 @@ public class CreateNotesActivity extends AppCompatActivity implements ISpeechRec
     @Override
     protected void onStart() {
         super.onStart();
-        //startMediaRecord();
+        executeSpeechToText();
     }
 
-    public void endCreate(View viwe) {
+    @Override
+    protected void onStop() {
+        super.onStop();
+        if (this.micClient != null) {
+            this.micClient.endMicAndRecognition();
+        }
+    }
+
+    public void endCreate(View view) {
         AlertDialog.Builder alert = new AlertDialog.Builder(this);
         alert.setTitle("ノート作成を");
         alert.setMessage("ノート作成を終了しますか？");
@@ -86,57 +131,6 @@ public class CreateNotesActivity extends AppCompatActivity implements ISpeechRec
         alert.show();
     }
 
-    private void startMediaRecord() {
-        try {
-            // ディレクトリがなければ作る
-            File dir = new File(saveAudioDirPath);
-            if (!dir.exists()) {
-                Log.d(TAG, "startMediaRecord: not exist dir");
-                dir.mkdir();
-            }
-
-            File mediaFile = new File(saveAudioDirPath + filename);
-            if (mediaFile.exists()) {
-                // ファイルが既に存在していたら削除
-                mediaFile.delete();
-            }
-            mediaFile = null;
-            recorder = new MediaRecorder();
-            recorder.setAudioSource(MediaRecorder.AudioSource.MIC);
-            recorder.setOutputFormat(MediaRecorder.OutputFormat.DEFAULT);
-            recorder.setAudioEncoder(MediaRecorder.AudioEncoder.DEFAULT);
-            recorder.setOutputFile(saveAudioDirPath + filename);
-            recorder.prepare();
-            recorder.start();
-            Log.d(TAG, "startMediaRecord: start" );
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void stopMediaRecord() {
-        if (recorder == null) {
-            Toast.makeText(this, "recorder = null", Toast.LENGTH_SHORT).show();
-        } else {
-            Log.d(TAG, "startMediaRecord: stop" );
-            try {
-                recorder.stop();
-                recorder.reset();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-    }
-
-    @Override
-    protected void onStop() {
-        super.onStop();
-        //recorder.release();
-    }
-
-
-
-
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         gestureDetector.onTouchEvent(event);
@@ -150,54 +144,90 @@ public class CreateNotesActivity extends AppCompatActivity implements ISpeechRec
          * @param e motion event
          * @return
          */
-
-
         @Override
         public boolean onDoubleTap(MotionEvent e) {
             Log.d(TAG, "onDoubleTap: ");
             surfaceView.setVisibility(View.VISIBLE);
             camera.takePicture(null,null,takePictureCallback);
-            //stopMediaRecord();
-            //startMediaRecord();
+            executeSpeechToText();
             return super.onDoubleTap(e);
         }
 
         @Override
         public void onLongPress(MotionEvent e) {
             Log.d(TAG, "onLongPress: ");
-            //stopMediaRecord();
+            if (null != micClient) {
+                micClient.endMicAndRecognition();
+            }
             super.onLongPress(e);
         }
     };
 
-    @Override
-    public void onPartialResponseReceived(String s) {
+    private void executeSpeechToText() {
+        Log.d(TAG, "executeSpeechToText: ");
+        if (this.micClient == null) {
+            this.micClient = SpeechRecognitionServiceFactory.createMicrophoneClient(
+                    this,
+                    this.getMode(),
+                    this.getDefaultLocale(),
+                    this,
+                    this.getPrimaryKey()
+            );
+            this.micClient.setAuthenticationUri(this.getAuthenticationUri());
+        }
+        this.micClient.startMicAndRecognition();
+    }
 
+    @Override
+    public void onPartialResponseReceived(String response) {
+        Log.d(TAG, "onPartialResponseReceived: " + response);
     }
 
     @Override
     public void onFinalResponseReceived(RecognitionResult recognitionResult) {
+        Log.d(TAG, "onFinalResponseReceived: start" );
+        boolean isFinalDictationMessage = (recognitionResult.RecognitionStatus == RecognitionStatus.EndOfDictation ||
+                                                recognitionResult.RecognitionStatus == RecognitionStatus.DictationEndSilenceTimeout);
 
+        if (null != this.micClient && isFinalDictationMessage) {
+            Log.d(TAG, "onFinalResponseReceived: endmic");
+            this.micClient.endMicAndRecognition();
+        }
+
+        if (isFinalDictationMessage) {
+            this.isReceivedResponse = FinalResponseStatus.OK;
+        }
+
+        if (!isFinalDictationMessage) {
+            Log.d(TAG, "********* Final n-BEST Results *********");
+            for (int i = 0; i < recognitionResult.Results.length; i++) {
+                Log.d(TAG, "onFinalResponseReceived: " + "[" + i + "]" + " Confidence=" + recognitionResult.Results[i].Confidence +
+                        " Text=\"" + recognitionResult.Results[i].DisplayText + "\"");
+            }
+        }
+        Log.d(TAG, "onFinalResponseReceived: end");
     }
 
     @Override
-    public void onIntentReceived(String s) {
-
-    }
-
+    public void onIntentReceived(String payload) {}
 
     @Override
-    public void onError(int i, String s) {
-
+    public void onError(int i, String response) {
+        Log.d(TAG, "onError: error code: " + SpeechClientStatus.fromInt(i));
+        Log.d(TAG, "onError: " + response);
     }
 
     @Override
-    public void onAudioEvent(boolean b) {
+    public void onAudioEvent(boolean recording) {
+        if (recording) {
+            Toast.makeText(this,"Start Record", Toast.LENGTH_SHORT).show();
+        }
 
+        if (!recording) {
+            this.micClient.endMicAndRecognition();
+            Toast.makeText(this, "Stop Record", Toast.LENGTH_SHORT).show();
+        }
     }
-
-
-
 
     private SurfaceHolder.Callback cameraCallback = new SurfaceHolder.Callback() {
         @Override
@@ -233,6 +263,7 @@ public class CreateNotesActivity extends AppCompatActivity implements ISpeechRec
     private Camera.PictureCallback  takePictureCallback = new Camera.PictureCallback(){
         @Override
         public void onPictureTaken(byte[] data, Camera camera) {
+            Log.d(TAG, "onPictureTaken: ");
             try {
                 File dir = new File(
                         Environment.getExternalStorageDirectory(), "Camera");
@@ -249,6 +280,7 @@ public class CreateNotesActivity extends AppCompatActivity implements ISpeechRec
                 camera.startPreview();
                 surfaceView.setVisibility(View.INVISIBLE);
             } catch (Exception e) {
+                e.printStackTrace();
             }
         }
     };
