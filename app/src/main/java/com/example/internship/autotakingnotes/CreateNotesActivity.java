@@ -27,13 +27,22 @@ import com.microsoft.cognitiveservices.speechrecognition.DataRecognitionClient;
 import com.microsoft.cognitiveservices.speechrecognition.ISpeechRecognitionServerEvents;
 import com.microsoft.cognitiveservices.speechrecognition.MicrophoneRecognitionClient;
 import com.microsoft.cognitiveservices.speechrecognition.RecognitionResult;
+
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import com.microsoft.cognitiveservices.speechrecognition.RecognitionStatus;
 import com.microsoft.cognitiveservices.speechrecognition.SpeechRecognitionMode;
 import com.microsoft.cognitiveservices.speechrecognition.SpeechRecognitionServiceFactory;
 
+import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.io.UnsupportedEncodingException;
 import java.util.concurrent.TimeUnit;
 
 public class CreateNotesActivity extends AppCompatActivity implements ISpeechRecognitionServerEvents {
@@ -48,7 +57,7 @@ public class CreateNotesActivity extends AppCompatActivity implements ISpeechRec
     Camera camera;
 
     // 音声テキスト化用
-    private int waitSeconds = 60;
+    private int waitSeconds = 200;
 
     private MicrophoneRecognitionClient micClient = null;
     private FinalResponseStatus isReceivedResponse = FinalResponseStatus.NotReceived;
@@ -67,7 +76,7 @@ public class CreateNotesActivity extends AppCompatActivity implements ISpeechRec
         return SpeechRecognitionMode.LongDictation;
     }
 
-    private String getSaveAudioDirPath() {
+    private String getSaveDirPath() {
         return "/storage/emulated/0/AutoTakingNotes/";
     }
 
@@ -76,11 +85,15 @@ public class CreateNotesActivity extends AppCompatActivity implements ISpeechRec
     }
 
     private String getFilePath() {
-        return getSaveAudioDirPath() + getWaveFile();
+        return getSaveDirPath() + getWaveFile();
     }
 
     private String getAuthenticationUri() {
         return this.getString(R.string.authenticationUri);
+    }
+    
+    private String getTextFileName() {
+        return "recorded_text.txt";
     }
 
     @Override
@@ -204,6 +217,9 @@ public class CreateNotesActivity extends AppCompatActivity implements ISpeechRec
                 Log.d(TAG, "onFinalResponseReceived: " + "[" + i + "]" + " Confidence=" + recognitionResult.Results[i].Confidence +
                         " Text=\"" + recognitionResult.Results[i].DisplayText + "\"");
             }
+            if (recognitionResult.Results.length>=1) {
+                saveTextFile(getSaveDirPath() + getTextFileName(), "(" + recognitionResult.Results[0].DisplayText + ")\n");
+            }
         }
         Log.d(TAG, "onFinalResponseReceived: end");
     }
@@ -282,8 +298,42 @@ public class CreateNotesActivity extends AppCompatActivity implements ISpeechRec
             } catch (Exception e) {
                 e.printStackTrace();
             }
+            executeSpeechToText();
         }
     };
 
+    private void saveTextFile(String filepath, String inputText) {
+        String message = "";
+        try {
+            FileOutputStream outStream = new FileOutputStream(filepath, true);
+            OutputStreamWriter outWriter = new OutputStreamWriter(outStream);
+            BufferedWriter bufferedWriter = new BufferedWriter(outWriter);
+            bufferedWriter.write(inputText);
+            bufferedWriter.flush();
+            bufferedWriter.close();
+            
+            message = "テキストを保存しました。";
+        } catch (FileNotFoundException e) {
+            message = e.getMessage();
+        } catch (IOException e) {
+            message = e.getMessage();
+        }
+        Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
+    }
+
+    private String readTextFile(String file) {
+        String text = null;
+        try {
+            FileInputStream fileInputStream = openFileInput(file);
+            String lineBuffer = null;
+            BufferedReader reader = new BufferedReader(new InputStreamReader(fileInputStream, "UTF-8"));
+            while ((lineBuffer = reader.readLine()) != null) {
+                text = lineBuffer;
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return text;
+    }
 
 }
