@@ -47,6 +47,10 @@ import java.io.FileOutputStream;
 import com.microsoft.cognitiveservices.speechrecognition.RecognitionStatus;
 import com.microsoft.cognitiveservices.speechrecognition.SpeechRecognitionMode;
 import com.microsoft.cognitiveservices.speechrecognition.SpeechRecognitionServiceFactory;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
+
 import java.io.IOException;
 
 import java.lang.ref.WeakReference;
@@ -54,6 +58,7 @@ import java.lang.ref.WeakReference;
 
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.util.Objects;
 
 public class CreateNotesActivity extends AppCompatActivity implements ISpeechRecognitionServerEvents {
 
@@ -74,6 +79,7 @@ public class CreateNotesActivity extends AppCompatActivity implements ISpeechRec
     // 音声テキスト化用
     private MicrophoneRecognitionClient micClient = null;
     private FinalResponseStatus isReceivedResponse = FinalResponseStatus.NotReceived;
+    private  String text_rec = "";
 
     private enum FinalResponseStatus { NotReceived, OK, Timeout }
 
@@ -152,14 +158,11 @@ public class CreateNotesActivity extends AppCompatActivity implements ISpeechRec
             }
         });
 
+
         alert.setNegativeButton("No", new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog, int which) {
                 //ここにNOの処理
                 Log.d(TAG, ":NO");
-                try {
-                    readImageFile("test1.jpg");
-                }catch(Exception ignored){}
-                doRecognize();
                 //doDescribe();
                 Toast.makeText(CreateNotesActivity.this, "Yes!!", Toast.LENGTH_LONG).show();
             }
@@ -219,61 +222,75 @@ public class CreateNotesActivity extends AppCompatActivity implements ISpeechRec
         } catch (Exception ignored) {}
     }
 
-    public void doDescribe() {
+
+    public  void createText(JSONObject json){
+        String text = "";
+        String rec = "";
+        String err ="";
         try {
-            new doRequest(this).execute();
-        } catch (Exception ignored) {}
+            JSONArray json_array = json.getJSONArray("regions");
+            Log.d(TAG, json.toString());
+            Log.d(TAG, "createText:241 "+ json_array.length());
+            if (json_array.length() != 0) {
+                try {
+
+                    JSONArray json_array_line = json_array.getJSONObject(0).getJSONArray("lines");
+                    JSONArray json_array_line_word;
+
+
+                    for (int i = 0; i < json_array_line.length(); i++) {
+                        json_array_line_word = json_array_line.getJSONObject(i).getJSONArray("words");
+                        for (int j = 0; j < json_array_line_word.length(); j++) {
+                            text += json_array_line_word.getJSONObject(j).getString("text");
+                        }
+                        text += "\n";
+                    }
+                } catch (Exception e) {
+                    err = e.getMessage();
+                    Log.d(TAG, err);
+                }
+                Log.d(TAG, text);
+                rec = text_rec;
+
+            }
+        }catch(Exception e){
+            Log.d(TAG, "エラー1");
+            err = e.getMessage();
+            Log.d(TAG, err);
+        }
+
+        new testThread().execute(getSaveDirPath() + getTextFileName(),text+"\n"+rec);
+
+        try {
+
+        }catch (Exception e){
+
+        }
+
     }
 
-    public void writeImageFile(Bitmap image) {
-    }
 
     private String process() throws VisionServiceException, IOException, InterruptedException {
 
         Gson gson = new Gson();
         String result = "null";
-//        try (ByteArrayOutputStream output = new ByteArrayOutputStream()) {
-//            bitmap.compress(Bitmap.CompressFormat.JPEG, 100, output);
-//            Log.d(TAG,"input前");
-//
-//            try (ByteArrayInputStream inputStream = new ByteArrayInputStream(output.toByteArray())) {
-//
-//                //HandwritingRecognitionOperation operation = client.createHandwritingRecognitionOperationAsync(inputStream);
-//                HandwritingRecognitionOperation operation = client.createHandwritingRecognitionOperationAsync(inputStream);
-//                HandwritingRecognitionOperationResult operationResult;
-//
-//
-//                int retryCount = 0;
-//                do {
-//                    if (retryCount > retryCountThreshold) {
-//                        throw new InterruptedException("Can't get result after retry in time.");
-//                    }
-//                    Thread.sleep(1000);
-//                    operationResult = client.getHandwritingRecognitionOperationResultAsync(operation.Url());
-//                }
-//                while (operationResult.getStatus().equals("NotStarted") || operationResult.getStatus().equals("Running"));
-//
-//                result = gson.toJson(operationResult);
-//                Log.d(TAG, result);
-//                return result;
-//
-//            } catch (Exception ex) {
-//                ex.printStackTrace();
-//            }
-//        } catch (Exception ex) {
-//            ex.printStackTrace();
-//        }
 
         ByteArrayOutputStream output = new ByteArrayOutputStream();
         bitmap.compress(Bitmap.CompressFormat.JPEG, 100, output);
         ByteArrayInputStream inputStream = new ByteArrayInputStream(output.toByteArray());
 
         OCR ocr;
-        ocr = this.client.recognizeText(inputStream, LanguageCodes.Japanese, true);
-
+        ocr = this.client.recognizeText(inputStream, LanguageCodes.AutoDetect, true);
         result = gson.toJson(ocr);
-        Log.d("result", result);
+        JSONObject json_object = new JSONObject();
+        try {
+            json_object = new JSONObject(result);
 
+        }catch(Exception e){
+
+        }
+        createText(json_object);
+        Log.d(TAG,result);
         return result;
     }
 
@@ -320,15 +337,23 @@ public class CreateNotesActivity extends AppCompatActivity implements ISpeechRec
                 FileOutputStream fos = new FileOutputStream(f);
                 fos.write(data);
                 Log.d(TAG,"写真の保存が終了しました");
-                Toast.makeText(getApplicationContext(),
-                        "写真を保存しました", Toast.LENGTH_LONG).show();
                 fos.close();
                 camera.startPreview();
                 surfaceView.setVisibility(View.INVISIBLE);
             } catch (Exception e) {
                 e.printStackTrace();
             }
-            executeSpeechToText();
+
+            if (null != micClient) {
+                micClient.endMicAndRecognition();
+            }
+
+            try {
+                readImageFile("test1.jpg");
+            }catch(Exception ignored){}
+            doRecognize();
+
+
         }
     };
 
@@ -372,7 +397,8 @@ public class CreateNotesActivity extends AppCompatActivity implements ISpeechRec
                         " Text=\"" + recognitionResult.Results[i].DisplayText + "\"");
             }
             if (recognitionResult.Results.length>=1) {
-                saveTextFile(getSaveDirPath() + getTextFileName(), "(" + recognitionResult.Results[0].DisplayText + ")\n");
+                //saveTextFile(getSaveDirPath() + getTextFileName(), "(" + recognitionResult.Results[0].DisplayText + ")\n");
+                text_rec+= "(" + recognitionResult.Results[0].DisplayText + ")\n";
             }
         }
         Log.d(TAG, "onFinalResponseReceived: end");
@@ -391,30 +417,12 @@ public class CreateNotesActivity extends AppCompatActivity implements ISpeechRec
     public void onAudioEvent(boolean recording) {
         if (recording) {
             Toast.makeText(this,"Start Record", Toast.LENGTH_SHORT).show();
-        } else {
-            this.micClient.endMicAndRecognition();
+        } else{          this.micClient.endMicAndRecognition();
             Toast.makeText(this, "Stop Record", Toast.LENGTH_SHORT).show();
         }
     }
 
-    private void saveTextFile(String filepath, String inputText) {
-        String message = "";
-        try {
-            FileOutputStream outStream = new FileOutputStream(filepath, true);
-            OutputStreamWriter outWriter = new OutputStreamWriter(outStream);
-            BufferedWriter bufferedWriter = new BufferedWriter(outWriter);
-            bufferedWriter.write(inputText);
-            bufferedWriter.flush();
-            bufferedWriter.close();
-            
-            message = "テキストを保存しました。";
-        } catch (FileNotFoundException e) {
-            message = e.getMessage();
-        } catch (IOException e) {
-            message = e.getMessage();
-        }
-        Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
-    }
+
 
     private String readTextFile(String file) {
         String text = null;
@@ -463,4 +471,46 @@ public class CreateNotesActivity extends AppCompatActivity implements ISpeechRec
 
         }
     }
+
+    private  static  class testThread extends AsyncTask<String, String, String>{
+
+        private WeakReference<CreateNotesActivity> recognitionActivity;
+
+    @Override
+        protected String doInBackground(String... strings) {
+            saveTextFile(strings[0],strings[1]);//+"\n"+rec);
+
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(String s) {
+            super.onPostExecute(s);
+
+        }
+
+        private void saveTextFile(String filepath, String inputText) {
+            String message = "";
+            try {
+                FileOutputStream outStream = new FileOutputStream(filepath, true);
+                OutputStreamWriter outWriter = new OutputStreamWriter(outStream);
+                BufferedWriter bufferedWriter = new BufferedWriter(outWriter);
+                bufferedWriter.write(inputText);
+                bufferedWriter.flush();
+                bufferedWriter.close();
+
+                message = "テキストを保存しました。";
+            } catch (FileNotFoundException e) {
+                message = e.getMessage();
+            } catch (IOException e) {
+                message = e.getMessage();
+            }
+            Log.d(TAG, "saveTextFile: "+ message);
+
+            //Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
+        }
+    }
+
+
+
 }
