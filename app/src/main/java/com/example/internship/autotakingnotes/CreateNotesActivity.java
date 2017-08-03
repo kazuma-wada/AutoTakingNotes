@@ -7,7 +7,6 @@ import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.hardware.Camera;
-import android.media.MediaRecorder;
 import android.os.AsyncTask;
 import android.os.Environment;
 
@@ -30,7 +29,6 @@ import com.microsoft.cognitiveservices.speechrecognition.ISpeechRecognitionServe
 import com.microsoft.cognitiveservices.speechrecognition.MicrophoneRecognitionClient;
 import com.microsoft.cognitiveservices.speechrecognition.RecognitionResult;
 
-import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import com.microsoft.projectoxford.vision.VisionServiceClient;
 import com.microsoft.projectoxford.vision.VisionServiceRestClient;
@@ -41,7 +39,6 @@ import com.microsoft.projectoxford.vision.rest.VisionServiceException;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import com.microsoft.cognitiveservices.speechrecognition.RecognitionStatus;
@@ -107,7 +104,7 @@ public class CreateNotesActivity extends AppCompatActivity implements ISpeechRec
         setContentView(R.layout.activity_create_notes);
         gestureDetector = new GestureDetector(this, onGestureListener);
         surfaceView = (SurfaceView) findViewById(R.id.mySurfaceVIew);
-        surfaceView.setVisibility(View.VISIBLE);
+        surfaceView.setVisibility(View.INVISIBLE);
         surfaceHolder = surfaceView.getHolder();
         surfaceHolder.addCallback(cameraCallback);
 
@@ -325,7 +322,6 @@ public class CreateNotesActivity extends AppCompatActivity implements ISpeechRec
     };
 
     private void executeSpeechToText() {
-        Log.d(TAG, "executeSpeechToText: ");
         if (this.micClient == null) {
             this.micClient = SpeechRecognitionServiceFactory.createMicrophoneClient(
                     this,
@@ -350,6 +346,7 @@ public class CreateNotesActivity extends AppCompatActivity implements ISpeechRec
                 recognitionResult.RecognitionStatus == RecognitionStatus.DictationEndSilenceTimeout);
 
         if (null != this.micClient && isFinalDictationMessage) {
+            Log.d(TAG, "onFinalResponseReceived: isFinal" + isFinalDictationMessage);
             this.micClient.endMicAndRecognition();
         }
 
@@ -367,7 +364,6 @@ public class CreateNotesActivity extends AppCompatActivity implements ISpeechRec
                 saveTextFile(getSaveDirPath() + getTextFileName(), "(" + recognitionResult.Results[0].DisplayText + ")\n");
             }
         }
-        Log.d(TAG, "onFinalResponseReceived: end");
     }
 
     @Override

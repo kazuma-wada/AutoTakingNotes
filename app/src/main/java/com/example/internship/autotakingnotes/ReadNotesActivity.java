@@ -51,7 +51,7 @@ public class ReadNotesActivity extends AppCompatActivity {
             String lineBuffer = null;
             BufferedReader reader = new BufferedReader(new InputStreamReader(fileInputStream, "UTF-8"));
             while ((lineBuffer = reader.readLine()) != null) {
-                text = lineBuffer;
+                text += lineBuffer + "\n";
             }
         } catch (IOException e) {
             e.printStackTrace();
