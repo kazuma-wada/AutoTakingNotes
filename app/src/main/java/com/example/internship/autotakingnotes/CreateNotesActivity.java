@@ -93,14 +93,6 @@ public class CreateNotesActivity extends AppCompatActivity implements ISpeechRec
         return "/storage/emulated/0/AutoTakingNotes/";
     }
 
-    private String getWaveFile() {
-        return "AudioNotes.wav";
-    }
-
-    private String getFilePath() {
-        return getSaveDirPath() + getWaveFile();
-    }
-
     private String getAuthenticationUri() {
         return this.getString(R.string.authenticationUri);
     }
@@ -415,22 +407,6 @@ public class CreateNotesActivity extends AppCompatActivity implements ISpeechRec
         }
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
     }
-
-    private String readTextFile(String file) {
-        String text = null;
-        try {
-            FileInputStream fileInputStream = openFileInput(file);
-            String lineBuffer = null;
-            BufferedReader reader = new BufferedReader(new InputStreamReader(fileInputStream, "UTF-8"));
-            while ((lineBuffer = reader.readLine()) != null) {
-                text = lineBuffer;
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return text;
-    }
-
 
     private static class doRequest extends AsyncTask<String, String, String> {
         // Store error message

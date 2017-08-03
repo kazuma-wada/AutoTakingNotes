@@ -2,16 +2,14 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
 
     <item
-        android:id="@+id/navigation_home"
-        android:title="ノート作成" />
+        android:id="@+id/navigation_create"
+        android:title="@string/create_note" />
 
     <item
-        android:id="@+id/navigation_dashboard"
-        android:textSize="100sp"
-        android:title="ノート閲覧" />
+        android:id="@+id/navigation_read"
+        android:title="@string/read_note" />
 
     <item
-        android:id="@+id/navigation_notifications"
-
-        android:title="ヘルプ" />
+        android:id="@+id/navigation_help"
+        android:title="@string/help" />
 </menu>

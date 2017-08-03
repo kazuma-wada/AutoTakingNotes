@@ -13,16 +13,17 @@
     <ImageView
         android:id="@+id/imageView"
         android:layout_width="match_parent"
-        android:layout_height="100dp"
+        android:layout_height="wrap_content"
         android:scaleType="fitCenter"
+        android:layout_weight="1"
         android:src="@drawable/note" />
 
     <android.support.design.widget.BottomNavigationView
         android:id="@+id/navigation"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_gravity="bottom"
-        android:background="?android:attr/windowBackground"
+        android:background="#FF000000"
+        app:itemTextColor="@color/colorText"
         app:menu="@menu/navigation" />
 
 </LinearLayout>

@@ -17,4 +17,12 @@
     -->
     <string name="authenticationUri">https://api.cognitive.microsoft.com/sts/v1.0/issueToken</string>
 
+    <!--app strings-->
+    <string name="end_activity">終了</string>
+    <string name="create_note">ノート作成</string>
+    <string name="read_note">ノート閲覧</string>
+    <string name="help">ヘルプ</string>
+    <string name="title_activity_read_notes">ReadNotesActivity</string>
+    <string name="select_file">ファイル選択</string>
+
 </resources>

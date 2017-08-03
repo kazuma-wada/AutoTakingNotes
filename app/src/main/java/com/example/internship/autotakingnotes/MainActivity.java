@@ -24,18 +24,17 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public boolean onNavigationItemSelected(@NonNull MenuItem item) {
             switch (item.getItemId()) {
-                case R.id.navigation_home:
+                case R.id.navigation_create:
                     Log.d(TAG, "呼ばれました:1");
-                    Intent intent = new Intent(MainActivity.this,CreateNotesActivity.class);
-                    startActivity(intent);
+                    Intent cIntent = new Intent(MainActivity.this,CreateNotesActivity.class);
+                    startActivity(cIntent);
                     return true;
-                case R.id.navigation_dashboard:
+                case R.id.navigation_read:
                     Log.d(TAG, "呼ばれました:2");
-                    //Intent intent = new Intent(MainActivity.this,CreateActivity.class);
-                    //startActivity(intent);
+                    Intent rIntent = new Intent(MainActivity.this, ReadNotesActivity.class);
+                    startActivity(rIntent);
                     return true;
-
-                case R.id.navigation_notifications:
+                case R.id.navigation_help:
                     Log.d(TAG, "呼ばれました:3");
                     return true;
             }
