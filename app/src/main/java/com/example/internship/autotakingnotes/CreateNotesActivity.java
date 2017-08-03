@@ -157,8 +157,6 @@ public class CreateNotesActivity extends AppCompatActivity implements ISpeechRec
         alert.show();
     }
 
-
-
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         gestureDetector.onTouchEvent(event);
@@ -426,8 +424,6 @@ public class CreateNotesActivity extends AppCompatActivity implements ISpeechRec
 
             return null;
         }
-
-
 
         @Override
         protected void onPostExecute(String data) {
