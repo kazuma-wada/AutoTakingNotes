@@ -106,6 +106,7 @@ public class CreateNotesActivity extends AppCompatActivity implements ISpeechRec
         setContentView(R.layout.activity_create_notes);
         gestureDetector = new GestureDetector(this, onGestureListener);
         surfaceView = (SurfaceView) findViewById(R.id.mySurfaceVIew);
+        surfaceView.setVisibility(View.VISIBLE);
         surfaceHolder = surfaceView.getHolder();
         surfaceHolder.addCallback(cameraCallback);
 
@@ -167,7 +168,6 @@ public class CreateNotesActivity extends AppCompatActivity implements ISpeechRec
         @Override
         public boolean onDoubleTap(MotionEvent e) {
             stopSpeechToText();
-            surfaceView.setVisibility(View.VISIBLE);
             camera.autoFocus(mAutoFocusCallback);
             return super.onDoubleTap(e);
         }
@@ -199,6 +199,7 @@ public class CreateNotesActivity extends AppCompatActivity implements ISpeechRec
 
 
     public  void createText(JSONObject json) {
+        Log.d(TAG, "createText: " + json.toString());
         String err = "";
         try {
             JSONArray json_array = json.getJSONArray("regions");
@@ -236,7 +237,7 @@ public class CreateNotesActivity extends AppCompatActivity implements ISpeechRec
                     textFromCamera = "";
                     textFromMic = "";
                 } else {
-                    Toast.makeText(getApplicationContext(),s,Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getApplicationContext(),s,Toast.LENGTH_LONG).show();
                 }
                 startSpeechToText();
             }
@@ -313,6 +314,7 @@ public class CreateNotesActivity extends AppCompatActivity implements ISpeechRec
         @Override
         public void onPictureTaken(byte[] data, Camera camera) {
             try {
+                surfaceView.setVisibility(View.INVISIBLE);
                 File dir = new File(
                         Environment.getExternalStorageDirectory(), "Camera");
                 if(!dir.exists()) {
@@ -322,7 +324,6 @@ public class CreateNotesActivity extends AppCompatActivity implements ISpeechRec
                 FileOutputStream fos = new FileOutputStream(f);
                 fos.write(data);
                 fos.close();
-                camera.startPreview();
 
                 readImageFile("test1.jpg");
 
