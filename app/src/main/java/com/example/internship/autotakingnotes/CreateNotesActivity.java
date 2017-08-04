@@ -117,7 +117,6 @@ public class CreateNotesActivity extends AppCompatActivity implements ISpeechRec
         setContentView(R.layout.activity_create_notes);
         gestureDetector = new GestureDetector(this, onGestureListener);
         surfaceView = (SurfaceView) findViewById(R.id.mySurfaceVIew);
-        surfaceView.setVisibility(View.INVISIBLE);
         surfaceHolder = surfaceView.getHolder();
         surfaceHolder.addCallback(cameraCallback);
 
@@ -180,7 +179,6 @@ public class CreateNotesActivity extends AppCompatActivity implements ISpeechRec
         public boolean onDoubleTap(MotionEvent e) {
             Log.d(TAG, "onDoubleTap: ");
             stopSpeechToText();
-            surfaceView.setVisibility(View.VISIBLE);
             camera.takePicture(null,null,takePictureCallback);
             return super.onDoubleTap(e);
         }
@@ -335,7 +333,6 @@ public class CreateNotesActivity extends AppCompatActivity implements ISpeechRec
                 fos.write(data);
                 fos.close();
                 camera.startPreview();
-                surfaceView.setVisibility(View.INVISIBLE);
 
                 readImageFile("test1.jpg");
 
