@@ -76,7 +76,10 @@ public class CreateNotesActivity extends AppCompatActivity implements ISpeechRec
     // 音声テキスト化用
     private MicrophoneRecognitionClient micClient = null;
     private FinalResponseStatus isReceivedResponse = FinalResponseStatus.NotReceived;
-    private  String text_rec = "";
+    private String textFromMic = "";
+    private String textFromCamera = "";
+    private boolean isTakenPicture = false;
+    private boolean isTakenAudio = false;
 
     private enum FinalResponseStatus { NotReceived, OK, Timeout }
 
@@ -104,6 +107,10 @@ public class CreateNotesActivity extends AppCompatActivity implements ISpeechRec
         return "recorded_text.txt";
     }
 
+    private String getSaveTextPath() {
+        return getSaveDirPath() + getTextFileName();
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -123,14 +130,15 @@ public class CreateNotesActivity extends AppCompatActivity implements ISpeechRec
     @Override
     protected void onStart() {
         super.onStart();
-        executeSpeechToText();
+        startSpeechToText();
     }
 
     @Override
     protected void onStop() {
         super.onStop();
-        if (this.micClient != null) {
-            this.micClient.endMicAndRecognition();
+        stopSpeechToText();
+        if (textFromCamera.equals("") && !textFromMic.equals("")) {
+            saveTextFile(getSaveTextPath(), textFromMic);
         }
     }
 
@@ -143,16 +151,12 @@ public class CreateNotesActivity extends AppCompatActivity implements ISpeechRec
                 //ここにYESの処理
                 Intent intent = new Intent(CreateNotesActivity.this, MainActivity.class);
                 startActivity(intent);
-                Log.d(TAG, "ダイアログ:YES");
             }
         });
 
 
         alert.setNegativeButton("No", new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog, int which) {
-                //ここにNOの処理
-                Log.d(TAG, ":NO");
-                //doDescribe();
                 Toast.makeText(CreateNotesActivity.this, "Yes!!", Toast.LENGTH_LONG).show();
             }
         });
@@ -175,9 +179,9 @@ public class CreateNotesActivity extends AppCompatActivity implements ISpeechRec
         @Override
         public boolean onDoubleTap(MotionEvent e) {
             Log.d(TAG, "onDoubleTap: ");
+            stopSpeechToText();
             surfaceView.setVisibility(View.VISIBLE);
             camera.takePicture(null,null,takePictureCallback);
-            executeSpeechToText();
             return super.onDoubleTap(e);
         }
 
@@ -192,75 +196,90 @@ public class CreateNotesActivity extends AppCompatActivity implements ISpeechRec
     };
 
     public void readImageFile(String imageFilename) throws Exception {
-        Log.d(TAG, "readImageが呼ばれました");
         try {
             bitmap = BitmapFactory.decodeFile(saveImageDirPath + imageFilename);
         } catch (Exception e) {
             e.printStackTrace();
         }
-        Log.d(TAG, "ビットマップを表示しますーーーーーーー");
-        Log.d(TAG, bitmap.toString());
-        Log.d(TAG, "ーーーーーーーーーーーー");
     }
 
     public void doRecognize() {
         try {
             new doRequest(this).execute();
-        } catch (Exception ignored) {}
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
 
-    public  void createText(JSONObject json){
-        String text = "";
-        String rec = "";
-        String err ="";
+    public  void createText(JSONObject json) {
+        String err = "";
         try {
             JSONArray json_array = json.getJSONArray("regions");
-            Log.d(TAG, json.toString());
-            Log.d(TAG, "createText:241 "+ json_array.length());
             if (json_array.length() != 0) {
-                try {
+                JSONArray json_array_line = json_array.getJSONObject(0).getJSONArray("lines");
+                JSONArray json_array_line_word;
 
-                    JSONArray json_array_line = json_array.getJSONObject(0).getJSONArray("lines");
-                    JSONArray json_array_line_word;
-
-
-                    for (int i = 0; i < json_array_line.length(); i++) {
-                        json_array_line_word = json_array_line.getJSONObject(i).getJSONArray("words");
-                        for (int j = 0; j < json_array_line_word.length(); j++) {
-                            text += json_array_line_word.getJSONObject(j).getString("text");
-                        }
-                        text += "\n";
+                for (int i = 0; i < json_array_line.length(); i++) {
+                    json_array_line_word = json_array_line.getJSONObject(i).getJSONArray("words");
+                    for (int j = 0; j < json_array_line_word.length(); j++) {
+                        textFromCamera += json_array_line_word.getJSONObject(j).getString("text");
                     }
-                } catch (Exception e) {
-                    err = e.getMessage();
-                    Log.d(TAG, err);
+                    textFromCamera += "\n";
                 }
-                Log.d(TAG, text);
-                rec = text_rec;
-
             }
-        }catch(Exception e){
-            Log.d(TAG, "エラー1");
+        } catch (Exception e) {
             err = e.getMessage();
-            Log.d(TAG, err);
         }
 
-        new testThread().execute(getSaveDirPath() + getTextFileName(),text+"\n"+rec);
+        /**
+         * save text file
+         */
+        new AsyncTask<String, String, String>() {
+            @Override
+            protected String doInBackground(String... strings) {
+                saveTextFile(strings[0],strings[1]);
+                return strings[2];
+            }
 
+            @Override
+            protected void onPostExecute(String s) {
+                super.onPostExecute(s);
+                if (s.equals("")) {
+                    Toast.makeText(getApplicationContext(),"テキスト保存完了",Toast.LENGTH_SHORT).show();
+                    textFromCamera = "";
+                    textFromMic = "";
+                } else {
+                    Toast.makeText(getApplicationContext(),s,Toast.LENGTH_SHORT).show();
+                }
+                startSpeechToText();
+            }
+        }.execute(getSaveTextPath(), textFromCamera + textFromMic, err);
+        
+    }
+
+    private void saveTextFile(String filepath, String inputText) {
+        String message = "";
         try {
+            FileOutputStream outStream = new FileOutputStream(filepath, true);
+            OutputStreamWriter outWriter = new OutputStreamWriter(outStream);
+            BufferedWriter bufferedWriter = new BufferedWriter(outWriter);
+            bufferedWriter.write(inputText);
+            bufferedWriter.flush();
+            bufferedWriter.close();
 
-        }catch (Exception e){
-
+            message = "テキストを保存しました。";
+        } catch (IOException e) {
+            message = e.getMessage();
         }
-
+        Log.d(TAG, "saveTextFile: "+ message);
     }
 
 
     private String process() throws VisionServiceException, IOException, InterruptedException {
 
         Gson gson = new Gson();
-        String result = "null";
+        String result;
 
         ByteArrayOutputStream output = new ByteArrayOutputStream();
         bitmap.compress(Bitmap.CompressFormat.JPEG, 100, output);
@@ -269,15 +288,6 @@ public class CreateNotesActivity extends AppCompatActivity implements ISpeechRec
         OCR ocr;
         ocr = this.client.recognizeText(inputStream, LanguageCodes.AutoDetect, true);
         result = gson.toJson(ocr);
-        JSONObject json_object = new JSONObject();
-        try {
-            json_object = new JSONObject(result);
-
-        }catch(Exception e){
-
-        }
-        createText(json_object);
-        Log.d(TAG,result);
         return result;
     }
 
@@ -323,28 +333,23 @@ public class CreateNotesActivity extends AppCompatActivity implements ISpeechRec
                 File f = new File(dir, "test1.jpg");
                 FileOutputStream fos = new FileOutputStream(f);
                 fos.write(data);
-                Log.d(TAG,"写真の保存が終了しました");
                 fos.close();
                 camera.startPreview();
                 surfaceView.setVisibility(View.INVISIBLE);
+
+                readImageFile("test1.jpg");
+
             } catch (Exception e) {
                 e.printStackTrace();
             }
 
-            if (null != micClient) {
-                micClient.endMicAndRecognition();
-            }
-
-            try {
-                readImageFile("test1.jpg");
-            }catch(Exception ignored){}
             doRecognize();
-
 
         }
     };
 
-    private void executeSpeechToText() {
+    private void startSpeechToText() {
+        textFromMic = "";
         if (this.micClient == null) {
             this.micClient = SpeechRecognitionServiceFactory.createMicrophoneClient(
                     this,
@@ -358,9 +363,16 @@ public class CreateNotesActivity extends AppCompatActivity implements ISpeechRec
         this.micClient.startMicAndRecognition();
     }
 
+    private void stopSpeechToText() {
+        if (this.micClient != null) {
+            this.micClient.endMicAndRecognition();
+        }
+        isTakenAudio = false;
+    }
+
     @Override
     public void onPartialResponseReceived(String response) {
-        Log.d(TAG, "onPartialResponseReceived: " + response);
+        //Log.d(TAG, "onPartialResponseReceived: " + response);
     }
 
     @Override
@@ -385,7 +397,8 @@ public class CreateNotesActivity extends AppCompatActivity implements ISpeechRec
             }
             if (recognitionResult.Results.length>=1) {
                 //saveTextFile(getSaveDirPath() + getTextFileName(), "(" + recognitionResult.Results[0].DisplayText + ")\n");
-                text_rec+= "(" + recognitionResult.Results[0].DisplayText + ")\n";
+                textFromMic+= "(" + recognitionResult.Results[0].DisplayText + ")\n";
+                isTakenAudio = true;
             }
         }
     }
@@ -402,13 +415,13 @@ public class CreateNotesActivity extends AppCompatActivity implements ISpeechRec
     @Override
     public void onAudioEvent(boolean recording) {
         if (recording) {
-            Toast.makeText(this,"Start Record", Toast.LENGTH_SHORT).show();
-        } else{          this.micClient.endMicAndRecognition();
-            Toast.makeText(this, "Stop Record", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this,"音声取得開始", Toast.LENGTH_SHORT).show();
+        } else {
+            this.micClient.endMicAndRecognition();
+            Toast.makeText(this, "音声取得終了", Toast.LENGTH_SHORT).show();
         }
     }
-
-
+    
 
     private static class doRequest extends AsyncTask<String, String, String> {
         // Store error message
@@ -429,56 +442,20 @@ public class CreateNotesActivity extends AppCompatActivity implements ISpeechRec
             } catch (Exception e) {
                 this.e = e;    // Store error
             }
-
             return null;
         }
 
         @Override
-        protected void onPostExecute(String data) {
-            super.onPostExecute(data);
-
-        }
-    }
-
-    private  static  class testThread extends AsyncTask<String, String, String>{
-
-        private WeakReference<CreateNotesActivity> recognitionActivity;
-
-    @Override
-        protected String doInBackground(String... strings) {
-            saveTextFile(strings[0],strings[1]);//+"\n"+rec);
-
-            return null;
-        }
-
-        @Override
-        protected void onPostExecute(String s) {
-            super.onPostExecute(s);
-
-        }
-
-        private void saveTextFile(String filepath, String inputText) {
-            String message = "";
+        protected void onPostExecute(String result) {
+            super.onPostExecute(result);
+            JSONObject json_object = new JSONObject();
             try {
-                FileOutputStream outStream = new FileOutputStream(filepath, true);
-                OutputStreamWriter outWriter = new OutputStreamWriter(outStream);
-                BufferedWriter bufferedWriter = new BufferedWriter(outWriter);
-                bufferedWriter.write(inputText);
-                bufferedWriter.flush();
-                bufferedWriter.close();
-
-                message = "テキストを保存しました。";
-            } catch (FileNotFoundException e) {
-                message = e.getMessage();
-            } catch (IOException e) {
-                message = e.getMessage();
+                json_object = new JSONObject(result);
+            }catch(Exception e){
+                e.printStackTrace();
             }
-            Log.d(TAG, "saveTextFile: "+ message);
-
-            //Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
+            recognitionActivity.get().createText(json_object);
         }
+
     }
-
-
-
 }
