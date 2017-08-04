@@ -78,8 +78,6 @@ public class CreateNotesActivity extends AppCompatActivity implements ISpeechRec
     private FinalResponseStatus isReceivedResponse = FinalResponseStatus.NotReceived;
     private String textFromMic = "";
     private String textFromCamera = "";
-    private boolean isTakenPicture = false;
-    private boolean isTakenAudio = false;
 
     private enum FinalResponseStatus { NotReceived, OK, Timeout }
 
@@ -181,7 +179,7 @@ public class CreateNotesActivity extends AppCompatActivity implements ISpeechRec
             Log.d(TAG, "onDoubleTap: ");
             stopSpeechToText();
             surfaceView.setVisibility(View.VISIBLE);
-            camera.takePicture(null,null,takePictureCallback);
+            camera.autoFocus(mAutoFocusCallback);
             return super.onDoubleTap(e);
         }
 
@@ -320,6 +318,14 @@ public class CreateNotesActivity extends AppCompatActivity implements ISpeechRec
         }
     };
 
+    private Camera.AutoFocusCallback mAutoFocusCallback = new Camera.AutoFocusCallback() {
+        @Override
+        public void onAutoFocus(boolean b, Camera camera) {
+            Toast.makeText(getApplicationContext(),"撮影中...", Toast.LENGTH_SHORT).show();
+            camera.takePicture(null,null,takePictureCallback);
+        }
+    };
+
     private Camera.PictureCallback  takePictureCallback = new Camera.PictureCallback(){
         @Override
         public void onPictureTaken(byte[] data, Camera camera) {
@@ -367,7 +373,6 @@ public class CreateNotesActivity extends AppCompatActivity implements ISpeechRec
         if (this.micClient != null) {
             this.micClient.endMicAndRecognition();
         }
-        isTakenAudio = false;
     }
 
     @Override
@@ -381,7 +386,6 @@ public class CreateNotesActivity extends AppCompatActivity implements ISpeechRec
                 recognitionResult.RecognitionStatus == RecognitionStatus.DictationEndSilenceTimeout);
 
         if (null != this.micClient && isFinalDictationMessage) {
-            Log.d(TAG, "onFinalResponseReceived: isFinal" + isFinalDictationMessage);
             this.micClient.endMicAndRecognition();
         }
 
@@ -398,7 +402,6 @@ public class CreateNotesActivity extends AppCompatActivity implements ISpeechRec
             if (recognitionResult.Results.length>=1) {
                 //saveTextFile(getSaveDirPath() + getTextFileName(), "(" + recognitionResult.Results[0].DisplayText + ")\n");
                 textFromMic+= "(" + recognitionResult.Results[0].DisplayText + ")\n";
-                isTakenAudio = true;
             }
         }
     }
