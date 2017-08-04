@@ -106,7 +106,7 @@ public class CreateNotesActivity extends AppCompatActivity implements ISpeechRec
         setContentView(R.layout.activity_create_notes);
         gestureDetector = new GestureDetector(this, onGestureListener);
         surfaceView = (SurfaceView) findViewById(R.id.mySurfaceVIew);
-        surfaceView.setVisibility(View.VISIBLE);
+        surfaceView.setVisibility(View.INVISIBLE);
         surfaceHolder = surfaceView.getHolder();
         surfaceHolder.addCallback(cameraCallback);
 
@@ -168,6 +168,7 @@ public class CreateNotesActivity extends AppCompatActivity implements ISpeechRec
         @Override
         public boolean onDoubleTap(MotionEvent e) {
             stopSpeechToText();
+            surfaceView.setVisibility(View.VISIBLE);
             camera.autoFocus(mAutoFocusCallback);
             return super.onDoubleTap(e);
         }
@@ -386,6 +387,7 @@ public class CreateNotesActivity extends AppCompatActivity implements ISpeechRec
             if (recognitionResult.Results.length>=1) {
                 //saveTextFile(getSaveDirPath() + getTextFileName(), "(" + recognitionResult.Results[0].DisplayText + ")\n");
                 textFromMic+= "(" + recognitionResult.Results[0].DisplayText + ")\n";
+                Toast.makeText(getApplicationContext(),"音声取得",Toast.LENGTH_SHORT).show();
             }
         }
     }
