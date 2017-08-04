@@ -28,8 +28,6 @@ public class ReadNotesActivity extends AppCompatActivity {
 
     private static final int CHOOSE_FILE_CODE = 12345;
 
-    public static final String SAVED_FILE_PATH = "/storage/emulated/0/AutoTakingNotes/recorded_text.txt";
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -40,7 +38,7 @@ public class ReadNotesActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        String readText = readTextFile(SAVED_FILE_PATH);
+        String readText = readTextFile(CreateNotesActivity.SAVED_FILE_PATH);
         readTextView.setText(readText);
     }
 

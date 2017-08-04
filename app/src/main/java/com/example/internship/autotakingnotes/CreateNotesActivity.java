@@ -65,6 +65,9 @@ public class CreateNotesActivity extends AppCompatActivity implements ISpeechRec
 
     private static final String saveImageDirPath = "/storage/emulated/0/Camera/";
 
+    public static final String  SAVE_FILE_NAME = "demo_file1.txt";
+    public static final String SAVED_FILE_PATH = "/storage/emulated/0/AutoTakingNotes/" + SAVE_FILE_NAME;
+
     // 画像テキスト化用
     SurfaceView surfaceView;
     SurfaceHolder surfaceHolder;
@@ -93,20 +96,8 @@ public class CreateNotesActivity extends AppCompatActivity implements ISpeechRec
         return SpeechRecognitionMode.LongDictation;
     }
 
-    private String getSaveDirPath() {
-        return "/storage/emulated/0/AutoTakingNotes/";
-    }
-
     private String getAuthenticationUri() {
         return this.getString(R.string.authenticationUri);
-    }
-    
-    private String getTextFileName() {
-        return "recorded_text.txt";
-    }
-
-    private String getSaveTextPath() {
-        return getSaveDirPath() + getTextFileName();
     }
 
     @Override
@@ -135,13 +126,13 @@ public class CreateNotesActivity extends AppCompatActivity implements ISpeechRec
         super.onStop();
         stopSpeechToText();
         if (textFromCamera.equals("") && !textFromMic.equals("")) {
-            saveTextFile(getSaveTextPath(), textFromMic);
+            saveTextFile(SAVED_FILE_PATH, textFromMic);
         }
     }
 
     public void endCreate(View view) {
         AlertDialog.Builder alert = new AlertDialog.Builder(this);
-        alert.setTitle("ノート作成を");
+        alert.setTitle("終了ボタン");
         alert.setMessage("ノート作成を終了しますか？");
         alert.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog, int which) {
@@ -175,7 +166,6 @@ public class CreateNotesActivity extends AppCompatActivity implements ISpeechRec
          */
         @Override
         public boolean onDoubleTap(MotionEvent e) {
-            Log.d(TAG, "onDoubleTap: ");
             stopSpeechToText();
             surfaceView.setVisibility(View.VISIBLE);
             camera.autoFocus(mAutoFocusCallback);
@@ -184,7 +174,6 @@ public class CreateNotesActivity extends AppCompatActivity implements ISpeechRec
 
         @Override
         public void onLongPress(MotionEvent e) {
-            Log.d(TAG, "onLongPress: ");
             if (null != micClient) {
                 micClient.endMicAndRecognition();
             }
@@ -251,12 +240,11 @@ public class CreateNotesActivity extends AppCompatActivity implements ISpeechRec
                 }
                 startSpeechToText();
             }
-        }.execute(getSaveTextPath(), textFromCamera + textFromMic, err);
+        }.execute(SAVED_FILE_PATH, textFromCamera + textFromMic, err);
         
     }
 
     private void saveTextFile(String filepath, String inputText) {
-        String message = "";
         try {
             FileOutputStream outStream = new FileOutputStream(filepath, true);
             OutputStreamWriter outWriter = new OutputStreamWriter(outStream);
@@ -265,13 +253,10 @@ public class CreateNotesActivity extends AppCompatActivity implements ISpeechRec
             bufferedWriter.flush();
             bufferedWriter.close();
 
-            message = "テキストを保存しました。";
         } catch (IOException e) {
-            message = e.getMessage();
+            e.printStackTrace();
         }
-        Log.d(TAG, "saveTextFile: "+ message);
     }
-
 
     private String process() throws VisionServiceException, IOException, InterruptedException {
 
@@ -320,7 +305,6 @@ public class CreateNotesActivity extends AppCompatActivity implements ISpeechRec
     private Camera.AutoFocusCallback mAutoFocusCallback = new Camera.AutoFocusCallback() {
         @Override
         public void onAutoFocus(boolean b, Camera camera) {
-            Toast.makeText(getApplicationContext(),"撮影中...", Toast.LENGTH_SHORT).show();
             camera.takePicture(null,null,takePictureCallback);
         }
     };
@@ -328,7 +312,6 @@ public class CreateNotesActivity extends AppCompatActivity implements ISpeechRec
     private Camera.PictureCallback  takePictureCallback = new Camera.PictureCallback(){
         @Override
         public void onPictureTaken(byte[] data, Camera camera) {
-            Log.d(TAG, "onPictureTaken: ");
             try {
                 File dir = new File(
                         Environment.getExternalStorageDirectory(), "Camera");
@@ -353,6 +336,7 @@ public class CreateNotesActivity extends AppCompatActivity implements ISpeechRec
     };
 
     private void startSpeechToText() {
+        Toast.makeText(this, "録音開始", Toast.LENGTH_SHORT).show();
         textFromMic = "";
         if (this.micClient == null) {
             this.micClient = SpeechRecognitionServiceFactory.createMicrophoneClient(
@@ -368,6 +352,7 @@ public class CreateNotesActivity extends AppCompatActivity implements ISpeechRec
     }
 
     private void stopSpeechToText() {
+        Toast.makeText(this, "録音終了", Toast.LENGTH_SHORT).show();
         if (this.micClient != null) {
             this.micClient.endMicAndRecognition();
         }
@@ -414,14 +399,7 @@ public class CreateNotesActivity extends AppCompatActivity implements ISpeechRec
     }
 
     @Override
-    public void onAudioEvent(boolean recording) {
-        if (recording) {
-            Toast.makeText(this,"音声取得開始", Toast.LENGTH_SHORT).show();
-        } else {
-            this.micClient.endMicAndRecognition();
-            Toast.makeText(this, "音声取得終了", Toast.LENGTH_SHORT).show();
-        }
-    }
+    public void onAudioEvent(boolean recording) {}
     
 
     private static class doRequest extends AsyncTask<String, String, String> {
