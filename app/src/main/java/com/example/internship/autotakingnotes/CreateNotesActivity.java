@@ -72,7 +72,6 @@ public class CreateNotesActivity extends AppCompatActivity implements ISpeechRec
     SurfaceView surfaceView;
     SurfaceHolder surfaceHolder;
     Camera camera;
-    public static final String subscriptionKey_vision = "e9253a508b0044459342c3bcef4816b0";
     private VisionServiceClient client;
     private Bitmap bitmap;
 
@@ -84,8 +83,8 @@ public class CreateNotesActivity extends AppCompatActivity implements ISpeechRec
 
     private enum FinalResponseStatus { NotReceived, OK, Timeout }
 
-    public String getPrimaryKey() {
-        return this.getString(R.string.primaryKey);
+    public String getSpeechSubscriptionKey() {
+        return this.getString(R.string.subscription_key_speech);
     }
 
     private String getDefaultLocale() {
@@ -110,7 +109,7 @@ public class CreateNotesActivity extends AppCompatActivity implements ISpeechRec
         surfaceHolder.addCallback(cameraCallback);
 
         if (client == null) {
-            client = new VisionServiceRestClient(subscriptionKey_vision);
+            client = new VisionServiceRestClient(getString(R.string.subscription_key_vision));
         }
 
     }
@@ -344,7 +343,7 @@ public class CreateNotesActivity extends AppCompatActivity implements ISpeechRec
                     this.getMode(),
                     this.getDefaultLocale(),
                     this,
-                    this.getPrimaryKey()
+                    this.getSpeechSubscriptionKey()
             );
             this.micClient.setAuthenticationUri(this.getAuthenticationUri());
         }
